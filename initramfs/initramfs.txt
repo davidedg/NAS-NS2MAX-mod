@@ -1,0 +1,98 @@
+***************************************************
+USE THE "vars.txt" commands to prepare the environment variables we will use.
+***************************************************
+
+##################################################
+# Introduction
+##################################################
+
+The kernel can boot up directly into rootfs or use an intermediate initramfs image.
+OverlayFS feature needs initramfs.
+
+
+I used BUSYBOX to reduce its size and had to write the init script from scratch (see credits section).
+
+
+##################################################
+# Create Initramfs staging directory
+##################################################
+
+
+mkdir -p $NASINITRAMFS/stage
+cd $NASINITRAMFS
+
+mkdir -p $NASINITRAMFS/stage/bin
+mkdir -p $NASINITRAMFS/stage/scripts
+
+
+
+# Get Busybox ARM binary
+
+wget http://busybox.net/downloads/binaries/latest/busybox-armv5l -O $NASINITRAMFS/stage/bin/busybox
+chmod +x $NASINITRAMFS/stage/bin/busybox
+ln -s busybox $NASINITRAMFS/stage/bin/sh
+
+
+# This script will automate the build process of initramfs image
+cat <<EOF > $NASINITRAMFS/make-uInitramfs
+#!/bin/sh
+cd stage
+find . | cpio -H newc -o | gzip >../uInitramfs.cpio.gz
+cd ..
+mkimage -A arm -O linux -T ramdisk -C gzip -a 0x00000000 -e 0x00000000 -n $NASINITRAMFSNAME -d uInitramfs.cpio.gz uInitramfs
+EOF
+
+chmod +x $NASINITRAMFS/make-uInitramfs
+
+
+##################################################
+# INITRAMFS INIT SCRIPTs
+##################################################
+
+Now copy these files into the staging directory:
+
+	init
+	scripts/local
+	scripts/functions
+	scripts/init-top/mdadm
+	bin/mdadm  (to compile this file see mdadm.txt)
+
+Ensure scripts are executable
+chmod +x $NASINITRAMFS/stage/init
+chmod +x $NASINITRAMFS/stage/bin/mdadm
+chmod +x $NASINITRAMFS/stage/scripts/init-top/mdadm
+
+
+##################################################
+# COMPILE INITRAMS
+##################################################
+
+Make Image:
+cd $NASINITRAMFS
+./make-uInitramfs
+	4747 blocks
+	Image Name:   NS2MAX-Initramfs
+	Created:      Sat Jun  7 00:13:15 2014
+	Image Type:   ARM Linux RAMDisk Image (gzip compressed)
+	Data Size:    1164064 Bytes = 1136.78 kB = 1.11 MB
+	Load Address: 00000000
+	Entry Point:  00000000
+
+
+
+##################################################
+# INSTALL INITRAMFS INTO ROOTFS
+##################################################
+
+- COPY uInitramfs to RootFS for NAND:
+
+cp $NASINITRAMFS/uInitramfs $RFShdd/boot/uInitramfs
+
+
+
+#######################################################################################################################
+## Credits: 
+## http://wiki.sourcemage.org/HowTo%282f%29Initramfs.html
+## The Debian Initramfs package
+## https://help.ubuntu.com/community/aufsRootFileSystemOnUsbFlash
+#######################################################################################################################

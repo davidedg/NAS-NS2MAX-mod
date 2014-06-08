@@ -1,0 +1,59 @@
+http://crosstool-ng.org/#download_and_usage
+
+aptitude install build-essentials
+aptitude install gperf flex bison gawk libtool automake expat libexpat1-dev
+aptitude install gcj-4.7-jdk
+ln -s /usr/bin/gcj-4.7 /usr/bin/gcj
+
+
+
+cd /usr/local/src
+wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.19.0.tar.bz2
+tar xjf crosstool-ng-1.19.0.tar.bz2
+cd crosstool-ng-1.19.0
+
+
+./configure --prefix=/usr/local/ct-ng
+make
+make install
+
+cp ct-ng.comp /etc/bash_completion.d/
+
+
+###############
+AS NORMAL USER:
+###############
+export PATH="${HOME}/x-tools/arm-unknown-linux-gnueabi/bin:/usr/local/ct-ng/bin:${PATH}"
+
+mkdir ~/src
+mkdir ~/ct
+cd ~/ct
+ct-ng help
+ct-ng list-samples
+
+ct-ng show-arm-unknown-linux-gnueabi
+	[G..]   arm-unknown-linux-gnueabi
+		OS             : linux-3.10.2
+		Companion libs : gmp-4.3.2 mpfr-2.4.2 libelf-0.8.13
+		binutils       : binutils-2.19.1a
+		C compiler     : gcc-4.3.2 (C,C++,Fortran,Java)
+		C library      : glibc-2.9 (threads: nptl)
+		Tools          : dmalloc-5.5.2 duma-2_5_15 gdb-6.8a ltrace-0.5.3 strace-4.5.19
+
+ct-ng arm-unknown-linux-gnueabi
+ct-ng build
+
+
+
+
+mkdir ~/mdadm
+cd ~/mdadm
+wget https://www.kernel.org/pub/linux/utils/raid/mdadm/mdadm-3.3.1.tar.xz
+tar xf mdadm-3.3.1.tar.xz
+
+cd mdadm-3.3.1
+
+make ARCH=arm CROSS_COMPILE=arm-unknown-linux-gnueabi- mdadm.static
+arm-unknown-linux-gnueabi-strip mdadm.static
+
+
