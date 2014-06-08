@@ -1,0 +1,11 @@
+#!/bin/sh
+MSGTAG="MDADM"
+echo "${MSGTAG}: initializing..."
+mdev -s
+if ! [ -f '/etc/mdadm.conf' ]; then
+  mkdir /etc
+  mdadm --examine --scan > /etc/mdadm.conf
+fi
+mdadm --assemble --scan
+mdadm --auto-detect
+exit 0
