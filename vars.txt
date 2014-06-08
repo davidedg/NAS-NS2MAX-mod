@@ -1,0 +1,27 @@
+RFShddPATH=/root/nas/ns2max/rootfs
+RFShddCFG=$RFShddPATH/multistrap-hdd.cfg
+RFShdd=$RFShddPATH/rfshdd
+
+NASMAC=00:D0:4B:91:B0:13
+NASIP=192.168.0.110
+NASGW=192.168.0.254
+NASHOSTNAME=spacemax.workgroup.lan
+
+UBOOTWORKDIR=/root/nas/ns2max/uboot
+
+KERNELWORKDIR=/root/nas/ns2max/kernel
+KERNELCURRENT=linux-3.14.5
+
+NASINITRAMFS=/root/nas/ns2max/initramfs
+NASINITRAMFSNAME="NS2MAX-Initramfs"
+
+#USB TEST:
+USBBOOTDEV=/dev/sdb1
+USBROOTDEV=/dev/sdb2
+
+USBBOOTMNT=$RFShddPATH/usb-boot
+USBROOTMNT=$RFShddPATH/usb-root
+
+USBTESTMNT=/mnt/usb_stick/
+
+
