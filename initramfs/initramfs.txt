@@ -55,7 +55,7 @@ Now copy these files into the staging directory:
 	scripts/local
 	scripts/functions
 	scripts/init-top/mdadm
-	bin/mdadm  (to compile this file see mdadm.txt)
+	bin/mdadm  (to compile this file see mdadm-static-compile.txt)
 
 Ensure scripts are executable
 chmod +x $NASINITRAMFS/stage/init

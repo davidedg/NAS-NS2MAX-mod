@@ -13,7 +13,7 @@ Recommended read order:
 - uboot/custom_u-boot.txt
 	- Compile new U-Boot and bootloader options
 
-- rootfs/mdadm.txt
+- rootfs/mdadm-static-compile.txt
 	- Compile MDADM statically for RAID-1 setups. This will use CROSSTOOL-NG
 
 - rootfs/initramfs.txt
@@ -31,6 +31,10 @@ Recommended read order:
 - install/install-on-hdd_mdadm.txt
 	- install from USB to new RAID-1 internal disks
 
+- misc/*
+	- Some script automations and LED alerts
+
+	
 - samba/smb.conf
 	- Special SAMBA configuration to optimize performance on this device
 
