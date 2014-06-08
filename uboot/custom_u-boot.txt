@@ -1,0 +1,175 @@
+
+##################################################
+# DOWNLOAD U-BOOT
+##################################################
+
+DOWNLOAD U-Boot:
+ftp://ftp.denx.de/pub/u-boot/
+
+cd $UBOOTWORKDIR
+wget ftp://ftp.denx.de/pub/u-boot/u-boot-2014.01.tar.bz2
+tar xjf u-boot-2014.01.tar.bz2
+cd u-boot-2014.01
+
+
+##################################################
+# ENABLE EFI/GPT SUPPORT
+##################################################
+
+echo -e "" >> ./include/configs/lacie_kw.h
+echo -e "/*" >> ./include/configs/lacie_kw.h
+echo -e " * Enable EFI/GPT Partitions" >> ./include/configs/lacie_kw.h
+echo -e " */" >> ./include/configs/lacie_kw.h
+echo -e "#ifndef CONFIG_EFI_PARTITION" >> ./include/configs/lacie_kw.h
+echo -e "#define CONFIG_EFI_PARTITION" >> ./include/configs/lacie_kw.h
+echo -e "#endif" >> ./include/configs/lacie_kw.h
+
+
+##################################################
+# (optional) ENABLE PREBOOT COMMAND (for netconsole)
+##################################################
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+PLEASE PAY REALLY ATTENTION IF YOU USE PREBOOT COMMAND,
+ YOU RISK TO BRICK THE DEVICE, even if you have serial console
+
+ YOU HAVE BEEN WARNED !
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+echo -e "" >> ./include/configs/lacie_kw.h
+echo -e "/*" >> ./include/configs/lacie_kw.h
+echo -e " * Enable PREBOOT Command" >> ./include/configs/lacie_kw.h
+echo -e " */" >> ./include/configs/lacie_kw.h
+echo -e "#ifndef CONFIG_PREBOOT" >> ./include/configs/lacie_kw.h
+echo -e "#define CONFIG_PREBOOT" >> ./include/configs/lacie_kw.h
+echo -e "#endif" >> ./include/configs/lacie_kw.h
+
+
+##################################################
+# BUILD U-BOOT
+##################################################
+
+
+make distclean
+make netspace_max_v2_config
+make u-boot.kwb
+
+final output:
+
+		Preparing kirkwood boot image to boot from spi
+		Image Type:   Kirkwood Boot from SPI Flash Image
+		Data Size:    249796 Bytes = 243.94 kB = 0.24 MB
+		Load Address: 00600000
+		Entry Point:  00600000
+
+ls -al *.kwb
+-rw-r--r-- 1 root root 250312 Jun  3 11:25 u-boot.kwb
+
+
+##################################################
+# INSTALLING NEW U-BOOT on FLASH
+##################################################
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    THIS IS THE MOST DANGEROUS PART
+	STRONGLY CONSIDER USING AN UPS FOR THE FLASH OPERATION.
+	IF BAD THINGS HAPPEN HERE, NAS BECOMES USELESS
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+FOLLOW INSTRUCTIONS (install from stock U-Boot), via TFTP:
+http://lacie-nas.org/doku.php?id=uboot#install_from_a_lacie_stock_u-boot
+
+(but we will use our built version of u-boot.kwb)
+
+
+
+
+NEW U-BOOT SERIAL LOG:
+###############################################################
+U-Boot 2014.01 (Jun 03 2014 - 11:24:39) NS Max v2
+
+SoC:   Kirkwood 88F6281_A1
+DRAM:  256 MiB
+WARNING: Caches not enabled
+SF: Detected MX25L4005 with page size 256 Bytes, erase size 64 KiB, total 512 KiB
+In:    serial
+Out:   serial
+Err:   serial
+Net:   egiga0
+88E1116 Initialized on egiga0
+Hit any key to stop autoboot:  0
+ns2> version
+
+U-Boot 2014.01 (Jun 03 2014 - 11:24:39) NS Max v2
+arm-none-eabi-gcc (Sourcery CodeBench Lite 2013.05-23) 4.7.3
+GNU ld (Sourcery CodeBench Lite 2013.05-23) 2.23.52.20130219
+
+
+
+##################################################
+# Configure new U-BOOT
+##################################################
+The U-Boot environment (configuration) resides on FLASH, from 0x70000 to 0x71000 (4KB)
+To change it, we do it from within U-Boot itself, via the "setenv" command.
+
+The following new configuration will set some required parameters and the new boot sequence will be:
+
+- if POWER BUTTON is pressed, configure NETCONSOLE ( see http://forum.doozan.com/read.php?3,14,14 )
+
+- try to boot from USB stick:
+		load from USB partition 1: uImage,dtb,uInitramfs and boot with root=LABEL=usb-root
+		1st partition can be either VFAT or EXT2
+- try to boot from HDD 0
+		load from IDE partition 1: kernel,dtb,uinitramfs and boot with root=LABEL=hdd-root
+
+		
+# 
+		
+setenv usbload
+setenv diskload
+
+setenv mainlineLinux 'yes'
+setenv uInitramfsAddr 0xD00000
+setenv DTBAddr 0xCF0000
+
+setenv usb_load_uImage 'fatload usb 0:1 ${loadaddr} /boot/uImage || ext2load usb 0:1 ${loadaddr} /boot/uImage'
+setenv usb_load_uInitramfs 'fatload usb 0:1 ${uInitramfsAddr} /boot/uInitramfs || ext2load usb 0:1 ${uInitramfsAddr} /boot/uInitramfs'
+setenv usb_load_DTB 'fatload usb 0:1 ${DTBAddr} /boot/kirkwood-ns2max.dtb || ext2load usb 0:1 ${DTBAddr} /boot/kirkwood-ns2max.dtb'
+setenv usb_setbootargs 'setenv bootargs console=ttyS0,115200 rootfstype=ext4 root=LABEL=usb-root usb-storage.delay_use=0 rootdelay=10 ${bootargs_end}'
+setenv boot_from_usb 'usb reset; if run usb_load_uImage && run usb_load_uInitramfs && run usb_load_DTB; then run usb_setbootargs; bootm ${loadaddr} ${uInitramfsAddr} ${DTBAddr}; fi'
+setenv hdd_load_uImage 'ext2load ide 0:1 ${loadaddr} /boot/uImage || ext2load ide 1:1 ${loadaddr} /boot/uImage'
+setenv hdd_load_uInitramfs 'ext2load ide 0:1 ${uInitramfsAddr} /boot/uInitramfs || ext2load ide 1:1 ${uInitramfsAddr} /boot/uInitramfs'
+setenv hdd_load_DTB 'ext2load ide 0:1 ${DTBAddr} /boot/kirkwood-ns2max.dtb || ext2load ide 1:1 ${DTBAddr} /boot/kirkwood-ns2max.dtb'
+setenv hdd_setbootargs 'setenv bootargs console=ttyS0,115200 rootfstype=ext4 root=LABEL=hdd-root rootdelay=10 ${bootargs_end}'
+setenv boot_from_hdd 'ide reset; if run hdd_load_uImage && run hdd_load_uInitramfs && run hdd_load_DTB; then run hdd_setbootargs; bootm ${loadaddr} ${uInitramfsAddr} ${DTBAddr}; fi'
+
+setenv bootcmd 'run boot_from_usb || run boot_from_hdd'
+
+
+# // NETCONSOLE
+##############################
+
+### OPTIONAL AND POTENTIALLY DANGEROUS ###
+setenv ipaddr 192.168.0.251
+setenv serverip 192.168.0.250
+setenv netconsole 'setenv bootdelay 60; set stdin serial,nc; set stdout serial,nc; set stderr serial,nc'
+setenv prebootcmd 'echo >BUTTON PRESSED! Current ENV:; printenv; ping $serverip; if test $? = 1; then echo >DHCP mode; dhcp; printenv; fi; run netconsole;'
+setenv preboot 'setenv bootdelay 3; setenv stdin serial; setenv stdout serial; setenv stderr serial; button; if test $? = 1; then run prebootcmd; fi'
+### OPTIONAL AND POTENTIALLY DANGEROUS ###
+
+
+# On Controlling PC, with IP ADDRESS = $serverip (not strictly required, but $serverip must be pingable):
+# Use NCAT from NMAP (either Windows or Linux):
+ncat -lu 6666
+
+# // NETCONSOLE
+##############################
+
+
+
+#######################################################################################################################
+#######################################################################################################################
