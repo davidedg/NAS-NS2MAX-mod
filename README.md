@@ -31,6 +31,9 @@ Recommended read order:
 - install/install-on-hdd_mdadm.txt
 	- install from USB to new RAID-1 internal disks
 
+- samba/smb.conf
+	- Special SAMBA configuration to optimize performance on this device
+
 
 - Go to https://github.com/davidedg/NAS-mod-config for further customizations
 
