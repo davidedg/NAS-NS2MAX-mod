@@ -1,0 +1,23 @@
+#!/bin/bash
+# install usbmount package to get automount on /media/usb*
+led_trigger=/sys/class/leds/ns2:red:fail/trigger
+
+mount|grep /media/usb >/dev/null 2>/dev/null
+if [ $? -eq 0 ]; then
+  cur_led_trigger=`cat $led_trigger|cut -d[ -f2|cut -d] -f1`
+  echo default-on > $led_trigger
+  sync
+  for u in /media/usb*; do
+    umount $u
+    umount $u
+  done
+  sync
+  sleep 1
+  echo $cur_led_trigger > $led_trigger
+elif [ -f /var/run/preshutdown ]; then
+  echo timer > $led_trigger
+  /sbin/shutdown -h now
+else
+  echo timer > $led_trigger
+  touch /var/run/preshutdown
+fi
