@@ -1,0 +1,5 @@
+#!/bin/sh
+echo timer > /sys/class/leds/ns2:red:fail/trigger
+date >> /var/log/smart.log
+echo $SMARTD_MESSAGE >> /var/log/smart.log
+
