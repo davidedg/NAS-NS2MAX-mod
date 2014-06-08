@@ -1,0 +1,95 @@
+#######################################################################################
+# gdisk /dev/sdb
+#######################################################################################
+GPT fdisk (gdisk) version 0.8.5
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+
+Command (? for help): p
+Disk /dev/sdb: 1953525168 sectors, 931.5 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 90F5582B-7982-439F-87E8-87FDED232C62
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 1953525134
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2014 sectors (1007.0 KiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048          104447   50.0 MiB    FD00  MD_hdd-boot
+   2          104448          628735   256.0 MiB   FD00  MD_hdd-swap
+   3          628736        11114495   5.0 GiB     FD00  MD_hdd-root
+   4        11114496      1953525134   926.2 GiB   FD00  MD_hdd-data
+
+#######################################################################################
+# gdisk /dev/sdc
+#######################################################################################
+GPT fdisk (gdisk) version 0.8.5
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+
+Command (? for help): p
+Disk /dev/sdc: 1953525168 sectors, 931.5 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): 3663B27A-9714-4708-A131-C45C6C19627A
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 1953525134
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2014 sectors (1007.0 KiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048          104447   50.0 MiB    FD00  MD_hdd-boot
+   2          104448          628735   256.0 MiB   FD00  MD_hdd-swap
+   3          628736        11114495   5.0 GiB     FD00  MD_hdd-root
+   4        11114496      1953525134   926.2 GiB   FD00  MD_hdd-data
+
+#######################################################################################
+# MD arrays
+#######################################################################################   
+
+# If you want boot partition on MD, must use metadata=0.90 so U-Boot can find the files:
+mdadm ­­create /dev/md0 --metadata=0.90 --level=1 --raid-devices=2 --spare-devices=0 --run /dev/sdb1 /dev/sdc1
+mdadm ­­create /dev/md1 --level=1 --raid-devices=2 --spare-devices=0 --run /dev/sdb2 /dev/sdc2
+mdadm ­­create /dev/md2 --level=1 --raid-devices=2 --spare-devices=0 --run /dev/sdb3 /dev/sdc3
+mdadm ­­create /dev/md3 --level=1 --raid-devices=2 --spare-devices=0 --run /dev/sdb4 /dev/sdc4
+
+mkfs.ext2 -L hdd-boot /dev/md0
+mkswap    -L hdd-swap /dev/md1
+mkfs.ext4 -L hdd-root -E lazy_itable_init=0,lazy_journal_init=0 /dev/md2
+mkfs.ext4 -L hdd-data -E lazy_itable_init=0,lazy_journal_init=0 /dev/md3
+
+# No reservation for our DATA disk!
+tune2fs -r 0 /dev/md3
+
+#######################################################################################
+# INSTALL ON HDD
+#######################################################################################   
+
+mkdir /mnt/hdd-boot /mnt/hdd-root /mnt/hdd-data
+mkdir /mnt/hdd-data/share
+
+mount LABEL=hdd-boot /mnt/hdd-boot
+mount LABEL=hdd-root /mnt/hdd-root
+mount LABEL=hdd-data /mnt/hdd-data
+
+cd /mnt/hdd-root/
+tar xzf /root.tar.gz 
+mv /mnt/hdd-root/boot/* /mnt/hdd-boot/
+cd /mnt/hdd-boot/
+ln -sf . boot
+
+
+cd ; umount /mnt/hdd-boot /mnt/hdd-root /mnt/hdd-data
+sync
+

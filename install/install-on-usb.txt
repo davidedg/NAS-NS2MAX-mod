@@ -1,0 +1,59 @@
+***************************************************
+USE THE "vars.txt" commands to prepare the environment variables we will use.
+***************************************************
+
+PARTITION USB DEVICE IN 2: 
+#1	bootable	50MB	type Linux (83) or VFAT (0C)
+#2	-			*		type Linux (83)
+
+Create FS
+#1:	BOOT PARTITION
+mkfs.ext2 -L usb-boot $USBBOOTDEV
+	or for VFAT: mkfs.vfat -n usb-boot $USBBOOTDEV
+#2: ROOT PARTITION
+mkfs.ext4 -L usb-root -E lazy_itable_init=0,lazy_journal_init=0 $USBROOTDEV
+
+
+
+# mount boot and root usb
+mkdir -p $USBBOOTMNT
+mkdir -p $USBROOTMNT
+
+mount $USBBOOTDEV $USBBOOTMNT
+mount $USBROOTDEV $USBROOTMNT
+
+# copy rootfs to usb-root
+cp -a $RFShdd/* $USBROOTMNT/
+
+# FOR EXT2 BOOT:
+	# fake for u-boot to be able to read from / and from /boot from usb 0:1
+	cd $USBBOOTMNT
+	ln -sf . boot
+	cd -
+	# move kernel, dtb and initramfs to usb-boot
+	mv $USBROOTMNT/boot/*  $USBBOOTMNT/
+
+# FOR VFAT BOOT:
+	mkdir $USBBOOTMNT/boot
+	rm $USBROOTMNT/boot/uImage
+	mv $USBROOTMNT/boot/uImage-v${KERNELVERSION}${KERNELSUFFIX} $USBROOTMNT/boot/uImage
+	mv $USBROOTMNT/boot/*  $USBBOOTMNT/boot/
+
+
+############################################
+# PREPARE TAR IMAGE FOR HDD TRANSFER
+############################################
+
+cd $RFShdd
+tar czf $RFShddPATH/root.tar.gz .
+cp $RFShddPATH/root.tar.gz $USBROOTMNT/
+	
+sync
+umount $USBBOOTMNT
+umount $USBROOTMNT
+
+
+Now you can insert the usb stick and test with U-Boot
+Then you might try installing on HDD with optional MD raid (install-on-hdd_mdadm.txt)
+
+##############################################################################
