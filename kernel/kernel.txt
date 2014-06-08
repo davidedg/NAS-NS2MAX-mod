@@ -1,0 +1,531 @@
+
+***************************************************
+USE THE "vars.txt" commands to prepare the environment variables we will use.
+SEE "cross-compile" section to prepare the build toolchain
+***************************************************
+
+
+##################################################
+# CONFIGURE KERNEL
+##################################################
+
+## Prep tree
+cd $KERNELWORKDIR/$KERNELCURRENT
+make distclean && make mrproper
+
+
+# Set labels for configured features in kernel name and filename
+# You can you use this to differentiate different builds
+KERNELSUFFIX=""
+
+
+### CONFIG:
+
+cat arch/arm/configs/kirkwood_defconfig - <<EOF > .config
+### MIMINAL HARDWARE CONFIG FOR LACIE NS2MAX
+# System Type
+CONFIG_ARCH_KIRKWOOD_DT=y
+#
+USE_OF=y
+CONFIG_SERIAL_OF_PLATFORM=y
+# NS2MAX has just 256MB ram
+CONFIG_HIGHMEM=n
+# This is important otherwise you get "__nand_correct_data: uncorrectable ECC error__nand_correct_data: uncorrectable ECC error"
+CONFIG_MTD_BLOCK=n
+# sensors support
+CONFIG_I2C_GPIO=y
+CONFIG_I2C_MV64XXX=y
+CONFIG_HWMON=y
+CONFIG_SENSORS_GPIO_FAN=y
+CONFIG_SENSORS_LM75=y
+# Ethernet
+CONFIG_MV643XX_ETH=y
+# initramfs support (to be able to use root=LABEL=)
+CONFIG_TMPFS=y
+CONFIG_BLK_DEV_INITRD=y
+# DEV KERNEL SUPPORT
+CONFIG_DEVTMPFS=y
+CONFIG_DEVTMPFS_MOUNT=y
+# NetConsole support
+CONFIG_NETCONSOLE=m
+EOF
+
+
+cat <<EOF >>.config
+# /proc/config.gz
+CONFIG_IKCONFIG=y
+CONFIG_IKCONFIG_PROC=y
+# Prepends timings
+CONFIG_PRINTK_TIME=y
+EOF
+
+
+
+# Reduce Kernel size
+cat <<EOF >>.config
+# Unused archs/machs selected by default kirkwood config
+CONFIG_MACH_D2NET_V2=n
+CONFIG_MACH_NET2BIG_V2=n
+CONFIG_MACH_NET5BIG_V2=n
+CONFIG_MACH_OPENRD_BASE=n
+CONFIG_MACH_OPENRD_CLIENT=n
+CONFIG_MACH_OPENRD_ULTIMATE=n
+CONFIG_MACH_RD88F6192_NAS=n
+CONFIG_MACH_RD88F6281=n
+CONFIG_MACH_T5325=n
+CONFIG_MACH_TS219=n
+CONFIG_MACH_TS41X=n
+CONFIG_MACH_MV88F6281GTW_GE_DT=n
+# Unused sensors selected by default kirkwood config
+CONFIG_SENSORS_ADT7475=n
+CONFIG_SENSORS_LM63=n
+CONFIG_SENSORS_LM85=n
+## Unused Device Drivers 
+CONFIG_BLK_DEV_SR=n
+# Device Drivers / LED Support
+CONFIG_LEDS_NS2=n
+CONFIG_LEDS_NETXBIG=n
+# Device Drivers / Real Time Clock
+CONFIG_RTC_DRV_RS5C372=n
+CONFIG_RTC_DRV_S35390A=n
+CONFIG_RTC_DRV_S35390A=n
+# Device Drivers / Network device support / Ethernet driver support
+# These are not wifi devices
+CONFIG_NET_VENDOR_3COM=n
+CONFIG_NET_VENDOR_ADAPTEC=n
+CONFIG_NET_VENDOR_ALTEON=n
+CONFIG_NET_VENDOR_AMD=n
+CONFIG_NET_VENDOR_ARC=n
+CONFIG_NET_VENDOR_ATHEROS=n
+CONFIG_NET_CADENCE=n
+CONFIG_NET_VENDOR_BROADCOM=n
+CONFIG_NET_VENDOR_BROCADE=n
+CONFIG_NET_VENDOR_CHELSIO=n
+CONFIG_NET_VENDOR_CIRRUS=n
+CONFIG_NET_VENDOR_CISCO=n
+CONFIG_NET_VENDOR_DEC=n
+CONFIG_NET_VENDOR_DLINK=n
+CONFIG_NET_VENDOR_EMULEX=n
+CONFIG_NET_VENDOR_EXAR=n
+CONFIG_NET_VENDOR_FARADAY=n
+CONFIG_NET_VENDOR_HP=n
+CONFIG_NET_VENDOR_INTEL=n
+CONFIG_NET_VENDOR_MELLANOX=n
+CONFIG_NET_VENDOR_MICREL=n
+CONFIG_NET_VENDOR_MICROCHIP=n
+CONFIG_NET_VENDOR_MYRI=n
+CONFIG_NET_VENDOR_NATSEMI=n
+CONFIG_NET_VENDOR_NVIDIA=n
+CONFIG_NET_VENDOR_OKI=n
+CONFIG_NET_PACKET_ENGINE=n
+CONFIG_NET_VENDOR_QLOGIC=n
+CONFIG_NET_VENDOR_REALTEK=n
+CONFIG_NET_VENDOR_RDC=n
+CONFIG_NET_VENDOR_SEEQ=n
+CONFIG_NET_VENDOR_SILAN=n
+CONFIG_NET_VENDOR_SIS=n
+CONFIG_NET_VENDOR_SMSC=n
+CONFIG_NET_VENDOR_STMICRO=n
+CONFIG_NET_VENDOR_SUN=n
+CONFIG_NET_VENDOR_TEHUTI=n
+CONFIG_NET_VENDOR_TI=n
+CONFIG_NET_VENDOR_VIA=n
+CONFIG_NET_VENDOR_WIZNET=n
+EOF
+
+
+
+
+# SCSI BLOCK LAYER 4
+cat <<EOF >>.config
+CONFIG_BLK_DEV_BSG=y
+EOF
+
+cat <<EOF >>.config
+# Disk Partitions
+CONFIG_PARTITION_ADVANCED=y
+CONFIG_MSDOS_PARTITION=y
+CONFIG_EFI_PARTITION=y
+CONFIG_LDM_PARTITION=y
+CONFIG_MAC_PARTITION=y
+# Filesystems support
+CONFIG_EXT2_FS=y
+CONFIG_EXT3_FS=y
+CONFIG_EXT4_FS=y
+CONFIG_XFS_FS=m
+CONFIG_FUSE_FS=m
+CONFIG_MSDOS_FS=m
+CONFIG_VFAT_FS=y
+CONFIG_NTFS_FS=m
+CONFIG_NTFS_RW=y
+CONFIG_JFFS2_FS=m
+CONFIG_HFS_FS=m
+CONFIG_HFSPLUS_FS=y
+EOF
+
+
+cat <<EOF >>.config
+# Disk Managers - MD
+CONFIG_MD=y
+# MD AUTODETECT IS DEPRECATED AND DOES NOT SEEM TO WORK ANYMORE ANYWAY
+CONFIG_MD_AUTODETECT=n
+CONFIG_BLK_DEV_MD=y
+CONFIG_MD_LINEAR=y
+CONFIG_MD_RAID0=y
+CONFIG_MD_RAID1=y
+# Disk Managers - LVM
+CONFIG_BLK_DEV_DM=y
+CONFIG_DM_CRYPT=m
+CONFIG_DM_SNAPSHOT=m
+CONFIG_DM_THIN_PROVISIONING=m
+CONFIG_DM_MIRROR=n
+CONFIG_DM_RAID=n
+CONFIG_DM_UEVENT=y
+EOF
+
+
+# Further reduce Kernel size
+cat <<EOF >>.config
+# # Reduce kernel size not compiling unused stuff
+# General setup section
+CONFIG_PROFILING=n
+CONFIG_KPROBES=n
+# Kernel Hacking section
+CONFIG_DEBUG_KERNEL=n
+CONFIG_DEBUG_FS=n
+CONFIG_FTRACE=n
+CONFIG_UNUSED_SYMBOLS=n
+CONFIG_STRIP_ASM_SYMS=y
+# Security section
+CONFIG_SECURITY=n
+CONFIG_SECURITY_SELINUX=n
+CONFIG_SECURITY_TOMOYO=n
+CONFIG_SECURITY_APPARMOR=n
+EOF
+
+
+# OPTIONAL FEATURES BEGIN
+##############################
+
+cat <<EOF >>.config
+# OpenVPN/IPSEC support
+CONFIG_TUN=m
+CONFIG_L2TP=m
+CONFIG_INET_AH=m
+CONFIG_INET_ESP=m
+EOF
+
+
+cat <<EOF >>.config
+# Example of a WiFi Dongle: DLINK DWL-G122 rev C1 USB
+CONFIG_RT2X00=m
+CONFIG_RT73USB=m
+EOF
+
+
+# BLUETOOTH + SOUND SUPPORT
+cat <<EOF >>.config
+# SOUND SUPPORT
+CONFIG_SOUND=m
+CONFIG_SND=m
+CONFIG_SND_SEQUENCER=m
+CONFIG_SND_SEQ_DUMMY=m
+CONFIG_SND_HRTIMER=m
+CONFIG_SND_SEQ_HRTIMER_DEFAULT=y
+CONFIG_SND_DYNAMIC_MINORS=y
+CONFIG_SND_MAX_CARDS=4
+CONFIG_SND_SUPPORT_OLD_API=y
+CONFIG_SND_DRIVERS=y
+# BLUETOOTH SUPPORT
+CONFIG_BT=m
+CONFIG_BT_RFCOMM=m
+CONFIG_BT_RFCOMM_TTY=y
+CONFIG_BT_BNEP=m
+CONFIG_BT_BNEP_MC_FILTER=y
+CONFIG_BT_BNEP_PROTO_FILTER=y
+CONFIG_BT_HIDP=m
+CONFIG_BT_HCIBTUSB=m
+CONFIG_BT_HCIBTSDIO=m
+CONFIG_BT_HCIUART=m
+CONFIG_BT_HCIUART_H4=y
+CONFIG_BT_HCIUART_BCSP=y
+CONFIG_BT_HCIUART_ATH3K=y
+CONFIG_BT_HCIUART_LL=y
+CONFIG_BT_HCIUART_3WIRE=y
+CONFIG_BT_HCIBCM203X=m
+CONFIG_BT_HCIBPA10X=m
+CONFIG_BT_HCIBFUSB=m
+CONFIG_BT_HCIVHCI=m
+CONFIG_BT_MRVL=m
+CONFIG_BT_MRVL_SDIO=m
+CONFIG_BT_ATH3K=m
+# UINPUT for Headsets
+CONFIG_INPUT_MISC=y
+CONFIG_INPUT_UINPUT=m
+EOF
+
+# // OPTIONAL FEATURES END
+##############################
+
+
+
+
+
+This will bring up the well-known ncurses-based configuration program.
+At this stage, you can exit and save and it will be ready.
+
+make menuconfig
+
+
+
+
+##################################################
+# COMPILE KERNEL
+##################################################
+
+ (adjust -j for your host - mine has 8 CPUs)
+make -j8 uImage modules kirkwood-ns2max.dtb
+
+	Image Name:   Linux-3.14.5
+	Created:      Tue Jun  3 00:20:25 2014
+	Image Type:   ARM Linux Kernel Image (uncompressed)
+	Data Size:    3323832 Bytes = 3245.93 kB = 3.17 MB
+	Load Address: 00008000
+	Entry Point:  00008000
+	  Image arch/arm/boot/uImage is ready
+
+
+	  
+##################################################
+# INSTALL KERNEL into ROOTFS tree
+# (prepare it with rootfs.txt)
+##################################################
+
+cd ${KERNELWORKDIR}/${KERNELCURRENT}
+
+# find current compiled version (Major.Minor)
+KERNELVERSION=$(grep -m5 "Linux/arm .* Kernel Configuration" .config | sed 's/.*Linux\/arm \(.*\) Kernel Configuration/\1/g' | cut -d. -f1-3)
+
+
+# COPY uImage+DTB+modules to RootFS for HDD/USB:
+cp arch/arm/boot/uImage $RFShdd/boot/uImage-v${KERNELVERSION}${KERNELSUFFIX}
+cp arch/arm/boot/dts/kirkwood-ns2max.dtb $RFShdd/boot/kirkwood-ns2max.dtb
+ln -sf uImage-v${KERNELVERSION}${KERNELSUFFIX} $RFShdd/boot/uImage
+make INSTALL_MOD_PATH=$RFShdd modules_install
+
+
+
+#######################################################################################################################
+#######################################################################################################################
+
+# DMESG LOG example:
+
+[    0.000000] Booting Linux on physical CPU 0x0
+[    0.000000] Linux version 3.14.5 (root@debian) (gcc version 4.7.3 (Sourcery CodeBench Lite 2013.05-23) ) #1 PREEMPT Fri Jun 6 22:57:15 CEST 2014
+[    0.000000] CPU: Feroceon 88FR131 [56251311] revision 1 (ARMv5TE), cr=00053977
+[    0.000000] CPU: VIVT data cache, VIVT instruction cache
+[    0.000000] Machine model: LaCie Network Space Max v2
+[    0.000000] Memory policy: Data cache writeback
+[    0.000000] On node 0 totalpages: 65536
+[    0.000000] free_area_init_node: node 0, pgdat c064825c, node_mem_map cfdfb000
+[    0.000000]   Normal zone: 512 pages used for memmap
+[    0.000000]   Normal zone: 0 pages reserved
+[    0.000000]   Normal zone: 65536 pages, LIFO batch:15
+[    0.000000] pcpu-alloc: s0 r0 d32768 u32768 alloc=1*32768
+[    0.000000] pcpu-alloc: [0] 0
+[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 65024
+[    0.000000] Kernel command line: console=ttyS0,115200 rootfstype=ext4 root=LABEL=hdd-root rootdelay=10
+[    0.000000] PID hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.000000] Dentry cache hash table entries: 32768 (order: 5, 131072 bytes)
+[    0.000000] Inode-cache hash table entries: 16384 (order: 4, 65536 bytes)
+[    0.000000] Memory: 251632K/262144K available (4704K kernel code, 253K rwdata, 1268K rodata, 169K init, 616K bss, 10512K reserved)
+[    0.000000] Virtual kernel memory layout:
+[    0.000000]     vector  : 0xffff0000 - 0xffff1000   (   4 kB)
+[    0.000000]     fixmap  : 0xfff00000 - 0xfffe0000   ( 896 kB)
+[    0.000000]     vmalloc : 0xd0800000 - 0xff000000   ( 744 MB)
+[    0.000000]     lowmem  : 0xc0000000 - 0xd0000000   ( 256 MB)
+[    0.000000]     modules : 0xbf000000 - 0xc0000000   (  16 MB)
+[    0.000000]       .text : 0xc0008000 - 0xc05dd21c   (5973 kB)
+[    0.000000]       .init : 0xc05de000 - 0xc060856c   ( 170 kB)
+[    0.000000]       .data : 0xc060a000 - 0xc06494c0   ( 254 kB)
+[    0.000000]        .bss : 0xc06494cc - 0xc06e3724   ( 617 kB)
+[    0.000000] SLUB: HWalign=32, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] Preemptible hierarchical RCU implementation.
+[    0.000000] NR_IRQS:114
+[    0.000024] sched_clock: 32 bits at 166MHz, resolution 6ns, wraps every 25769803770ns
+[    0.000323] Console: colour dummy device 80x30
+[    0.000365] Calibrating delay loop... 795.44 BogoMIPS (lpj=3977216)
+[    0.040129] pid_max: default: 32768 minimum: 301
+[    0.040346] Mount-cache hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.040372] Mountpoint-cache hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.041153] CPU: Testing write buffer coherency: ok
+[    0.041652] Setting up static identity map for 0x479090 - 0x4790e8
+[    0.043608] devtmpfs: initialized
+[    0.045475] pinctrl core: initialized pinctrl subsystem
+[    0.046751] regulator-dummy: no parameters
+[    0.047412] NET: Registered protocol family 16
+[    0.048068] DMA: preallocated 256 KiB pool for atomic coherent allocations
+[    0.052660] cpuidle: using governor ladder
+[    0.052688] cpuidle: using governor menu
+[    0.052845] Kirkwood: MV88F6281-A1.
+[    0.053043] Feroceon L2: Enabling L2
+[    0.053097] Feroceon L2: Cache support initialised.
+[    0.053779] [Firmware Info]: /ocp@f1000000/ethernet-controller@72000/ethernet0-port@0: local-mac-address is not set
+[    0.091043] bio: create slab <bio-0> at 0
+[    0.092280] vgaarb: loaded
+[    0.093033] SCSI subsystem initialized
+[    0.093575] libata version 3.00 loaded.
+[    0.094644] usbcore: registered new interface driver usbfs
+[    0.094869] usbcore: registered new interface driver hub
+[    0.095116] usbcore: registered new device driver usb
+[    0.098837] cfg80211: Calling CRDA to update world regulatory domain
+[    0.099193] Switched to clocksource orion_clocksource
+[    0.121267] NET: Registered protocol family 2
+[    0.121891] TCP established hash table entries: 2048 (order: 1, 8192 bytes)
+[    0.121941] TCP bind hash table entries: 2048 (order: 1, 8192 bytes)
+[    0.121984] TCP: Hash tables configured (established 2048 bind 2048)
+[    0.122069] TCP: reno registered
+[    0.122086] UDP hash table entries: 256 (order: 0, 4096 bytes)
+[    0.122116] UDP-Lite hash table entries: 256 (order: 0, 4096 bytes)
+[    0.122362] NET: Registered protocol family 1
+[    0.122740] RPC: Registered named UNIX socket transport module.
+[    0.122753] RPC: Registered udp transport module.
+[    0.122762] RPC: Registered tcp transport module.
+[    0.122770] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.122784] PCI: CLS 0 bytes, default 32
+[    0.123043] Unpacking initramfs...
+[    0.240540] Freeing initrd memory: 1136K (cfa4c000 - cfb68000)
+[    0.242401] futex hash table entries: 256 (order: -1, 3072 bytes)
+[    0.268960] msgmni has been set to 493
+[    0.270770] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 252)
+[    0.270787] io scheduler noop registered
+[    0.270796] io scheduler deadline registered
+[    0.271240] io scheduler cfq registered (default)
+[    0.273145] kirkwood-pinctrl f1010000.pinctrl: registered pinctrl driver
+[    0.273782] mv_xor f1060800.xor: Marvell shared XOR driver
+[    0.309302] mv_xor f1060800.xor: Marvell XOR: ( xor cpy )
+[    0.349300] mv_xor f1060800.xor: Marvell XOR: ( xor cpy )
+[    0.349621] mv_xor f1060900.xor: Marvell shared XOR driver
+[    0.389288] mv_xor f1060900.xor: Marvell XOR: ( xor cpy )
+[    0.429288] mv_xor f1060900.xor: Marvell XOR: ( xor cpy )
+[    0.438171] Serial: 8250/16550 driver, 2 ports, IRQ sharing disabled
+[    0.440488] f1012000.serial: ttyS0 at MMIO 0xf1012000 (irq = 33, base_baud = 10416666) is a 16550A
+[    0.896140] console [ttyS0] enabled
+[    0.906728] loop: module loaded
+[    0.911193] sata_mv f1080000.sata: version 1.28
+[    0.911464] sata_mv f1080000.sata: slots 32 ports 2
+[    0.920448] scsi0 : sata_mv
+[    0.923965] scsi1 : sata_mv
+[    0.927281] ata1: SATA max UDMA/133 irq 26
+[    0.931448] ata2: SATA max UDMA/133 irq 26
+[    0.938681] m25p80 spi0.0: mx25l4005a (512 Kbytes)
+[    0.943851] 1 ofpart partitions found on MTD device spi0.0
+[    0.949502] Creating 1 MTD partitions on "spi0.0":
+[    0.954281] 0x000000000000-0x000000080000 : "u-boot"
+[    0.962495] libphy: orion_mdio_bus: probed
+[    0.967573] mv643xx_eth: MV-643xx 10/100/1000 ethernet driver version 1.4
+[    1.439230] ata1: SATA link up 3.0 Gbps (SStatus 123 SControl F300)
+[    1.459470] ata1.00: ATA-7: SAMSUNG HD103SI, 1AG01118, max UDMA7
+[    1.465450] ata1.00: 1953525168 sectors, multi 0: LBA48 NCQ (depth 31/32)
+[    1.529262] ata1.00: configured for UDMA/133
+[    1.549594] scsi 0:0:0:0: Direct-Access     ATA      SAMSUNG HD103SI  1AG0 PQ: 0 ANSI: 5
+[    1.570393] sd 0:0:0:0: [sda] 1953525168 512-byte logical blocks: (1.00 TB/931 GiB)
+[    1.589692] sd 0:0:0:0: [sda] Write Protect is off
+[    1.594474] sd 0:0:0:0: [sda] Mode Sense: 00 3a 00 00
+[    1.594603] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[    1.731425]  sda: sda1 sda2 sda3 sda4
+[    1.750684] sd 0:0:0:0: [sda] Attached SCSI disk
+[    2.099226] ata2: SATA link up 3.0 Gbps (SStatus 123 SControl F300)
+[    2.119464] ata2.00: ATA-7: SAMSUNG HD103SI, 1AG01118, max UDMA7
+[    2.125451] ata2.00: 1953525168 sectors, multi 0: LBA48 NCQ (depth 31/32)
+[    2.137166] mv643xx_eth_port mv643xx_eth_port.0 eth0: port 0 with MAC address 00:d0:4b:91:b0:13
+[    2.146064] libertas_sdio: Libertas SDIO driver
+[    2.150893] ata2.00: configured for UDMA/133
+[    2.155204] libertas_sdio: Copyright Pierre Ossman
+[    2.160198] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    2.166693] ehci-pci: EHCI PCI platform driver
+[    2.171567] scsi 1:0:0:0: Direct-Access     ATA      SAMSUNG HD103SI  1AG0 PQ: 0 ANSI: 5
+[    2.181003] sd 1:0:0:0: [sdb] 1953525168 512-byte logical blocks: (1.00 TB/931 GiB)
+[    2.188804] ehci-orion: EHCI orion driver
+[    2.193389] orion-ehci f1050000.ehci: EHCI Host Controller
+[    2.198885] orion-ehci f1050000.ehci: new USB bus registered, assigned bus number 1
+[    2.206942] sd 1:0:0:0: [sdb] Write Protect is off
+[    2.211774] sd 1:0:0:0: [sdb] Mode Sense: 00 3a 00 00
+[    2.211909] sd 1:0:0:0: [sdb] Write cache: enabled, read cache: enabled, doesn't support DPO or FUA
+[    2.221177] orion-ehci f1050000.ehci: irq 25, io mem 0xf1050000
+[    2.239264] orion-ehci f1050000.ehci: USB 2.0 started, EHCI 1.00
+[    2.246470] hub 1-0:1.0: USB hub found
+[    2.250335] hub 1-0:1.0: 1 port detected
+[    2.255298] usbcore: registered new interface driver usb-storage
+[    2.262092] usbcore: registered new interface driver ums-datafab
+[    2.268516]  sdb: sdb1 sdb2 sdb3 sdb4
+[    2.273789] usbcore: registered new interface driver ums-freecom
+[    2.281369] sd 1:0:0:0: [sdb] Attached SCSI disk
+[    2.286068] usbcore: registered new interface driver ums-jumpshot
+[    2.292464] usbcore: registered new interface driver ums-sddr09
+[    2.298568] usbcore: registered new interface driver ums-sddr55
+[    2.305151] mousedev: PS/2 mouse device common for all mice
+[    2.311714] rtc-mv f1010300.rtc: rtc core: registered f1010300.rtc as rtc0
+[    2.318956] i2c /dev entries driver
+[    2.324260] at24 0-0050: 512 byte 24c04 EEPROM, writable, 16 bytes/write
+[    2.332187] gpio-fan gpio_fan.5: GPIO fan initialized
+[    2.339340] orion_wdt: Initial timeout 25 sec
+[    2.343900] md: linear personality registered for level -1
+[    2.349515] md: raid0 personality registered for level 0
+[    2.354804] md: raid1 personality registered for level 1
+[    2.360745] device-mapper: uevent: version 1.0.3
+[    2.366090] device-mapper: ioctl: 4.27.0-ioctl (2013-10-30) initialised: dm-devel@redhat.com
+[    2.382863] usbcore: registered new interface driver usbhid
+[    2.388421] usbhid: USB HID core driver
+[    2.392827] TCP: cubic registered
+[    2.396132] NET: Registered protocol family 17
+[    2.401074] lib80211: common routines for IEEE802.11 drivers
+[    2.406714] lib80211_crypt: registered algorithm 'NULL'
+[    2.407799] regulator-dummy: disabling
+[    2.412452] input: gpio_keys.2 as /devices/gpio_keys.2/input/input0
+[    2.419429] rtc-mv f1010300.rtc: setting system clock to 2014-06-07 14:09:57 UTC (1402150197)
+[    2.429008] Freeing unused kernel memory: 168K (c05de000 - c0608000)
+[    3.167153] md: md124 stopped.
+[    3.173386] md: bind<sdb1>
+[    3.176957] md: bind<sda1>
+[    3.181528] md/raid1:md124: active with 2 out of 2 mirrors
+[    3.187136] md124: detected capacity change from 0 to 52363264
+[    3.194260]  md124: unknown partition table
+[    3.210651] md: md1 stopped.
+[    3.219392] md: bind<sdb2>
+[    3.224929] md: bind<sda2>
+[    3.229487] md/raid1:md1: active with 2 out of 2 mirrors
+[    3.234928] md1: detected capacity change from 0 to 268238848
+[    3.241854]  md1: unknown partition table
+[    3.262098] md: md2 stopped.
+[    3.275134] md: bind<sdb3>
+[    3.278322] md: bind<sda3>
+[    3.282943] md/raid1:md2: active with 2 out of 2 mirrors
+[    3.288384] md2: detected capacity change from 0 to 5364449280
+[    3.364670]  md2: unknown partition table
+[    3.393332] md: md3 stopped.
+[    3.409627] md: bind<sdb4>
+[    3.412850] md: bind<sda4>
+[    3.417267] md/raid1:md3: active with 2 out of 2 mirrors
+[    3.422903] md3: detected capacity change from 0 to 994379825152
+[    3.705182]  md3: unknown partition table
+[    3.719884] md: Autodetecting RAID arrays.
+[    3.723990] md: could not open unknown-block(8,1).
+[    3.728768] md: could not open unknown-block(8,2).
+[    3.733653] md: could not open unknown-block(8,3).
+[    3.738433] md: could not open unknown-block(8,4).
+[    3.743272] md: could not open unknown-block(8,17).
+[    3.748136] md: could not open unknown-block(8,18).
+[    3.753111] md: could not open unknown-block(8,19).
+[    3.757978] md: could not open unknown-block(8,20).
+[    3.762884] md: Scanned 8 and added 0 devices.
+[    3.767303] md: autorun ...
+[    3.770115] md: ... autorun DONE.
+[    5.029833] EXT4-fs (md2): mounted filesystem with ordered data mode. Opts: (null)
+[    5.883694] random: nonblocking pool is initialized
+[   10.586294] Adding 261948k swap on /dev/md1.  Priority:-1 extents:1 across:261948k
+[   10.720447] EXT4-fs (md2): re-mounted. Opts: errors=remount-ro
+[   15.128510] EXT4-fs (md3): mounted filesystem with ordered data mode. Opts: (null)
+[   20.713588] mv643xx_eth_port mv643xx_eth_port.0 eth0: link up, 1000 Mb/s, full duplex, flow control disabled
+
+
