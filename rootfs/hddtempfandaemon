@@ -1,0 +1,62 @@
+#!/bin/sh
+led_device_bri=/sys/class/leds/ns2:red:fail/brightness
+fan_target=`find /sys/devices -name fan1_target`
+fan_rpmmin=`cat \`find /sys/devices -name fan1_min\``
+fan_rpmmax=`cat \`find /sys/devices -name fan1_max\``
+ 
+DISKS="/dev/sd[a-z]"
+MAXHDDTEMPERATUREFILE=/var/run/hddmaxtemp
+
+if [ ! -x `which hddtemp` ]; then
+  echo 255 > $led_device_bri
+  echo 0 > $MAXHDDTEMPERATUREFILE
+  echo $fan_rpmmax > $fan_target
+  exit
+fi
+
+
+trap 'echo KILLED!! TRYING TO RESTORE FAN AT MAX SPEED; echo 255 > $led_device_bri ; echo $fan_rpmmax > $fan_target; exit 2' QUIT TERM HUP INT KILL
+
+
+while true; do
+  maxtemp=0
+  for t in `hddtemp -uC -n $DISKS 2>/dev/null`; do
+    if [ $t -gt $maxtemp ]; then
+      maxtemp=$t
+    fi
+  done
+  echo $maxtemp > $MAXHDDTEMPERATUREFILE
+  
+  targetrpm=$fan_rpmax
+  if [ $maxtemp -le 32 ]; then
+    targetrpm=$fan_rpmmin
+  fi
+  if [ $maxtemp -ge 34 ]; then
+    targetrpm=1500
+  fi
+  if [ $maxtemp -ge 37 ]; then
+    targetrpm=1700
+  fi
+  if [ $maxtemp -ge 39 ]; then
+    targetrpm=1800
+  fi
+  if [ $maxtemp -ge 42 ]; then
+    targetrpm=2100
+  fi
+  if [ $maxtemp -ge 45 ]; then
+    targetrpm=3100
+  fi
+  if [ $maxtemp -ge 48 ]; then
+    targetrpm=3300
+  fi
+  if [ $maxtemp -ge 50 ]; then
+    targetrpm=4300
+  fi
+  if [ $maxtemp -ge 54 ]; then
+    targetrpm=$fan_rpmax
+  fi
+
+  echo $targetrpm > $fan_target
+
+  sleep 10
+done
