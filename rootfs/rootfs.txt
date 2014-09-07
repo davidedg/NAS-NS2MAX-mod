@@ -35,7 +35,7 @@ aptsources=wheezy wheezy-updates wheezy-security
 cleanup=true
 
 [wheezy]
-packages=udev kmod mtd-utils evtest usbutils xfsprogs parted gdisk hddtemp esekeyd u-boot-tools cpio klibc-utils makedev procps psmisc less apt aptitude dialog netbase net-tools ethtool ifupdown iproute iptables pump iputils-ping dropbear rsyslog ntpdate vim-tiny mc htop nmon locales ncurses-term wget bash-completion screen
+packages=udev kmod mtd-utils evtest usbutils xfsprogs parted gdisk hddtemp esekeyd u-boot-tools cpio klibc-utils makedev procps psmisc less apt apt-utils aptitude dialog netbase net-tools ethtool ifupdown iproute iptables pump iputils-ping dropbear rsyslog ntpdate vim-tiny mc htop nmon locales ncurses-term wget bash-completion screen
 source=http://ftp.debian.org/debian
 keyring=debian-archive-keyring
 components=main contrib non-free
