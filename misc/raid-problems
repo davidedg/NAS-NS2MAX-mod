@@ -1,2 +1,4 @@
 #!/bin/sh
 echo timer > /sys/class/leds/ns2:red:fail/trigger
+date >> /var/log/mdadm.log
+cat /proc/mdstat >> /var/log/mdadm.log

@@ -10,7 +10,7 @@ NASHOSTNAME=spacemax.workgroup.lan
 UBOOTWORKDIR=/root/nas/ns2max/uboot
 
 KERNELWORKDIR=/root/nas/ns2max/kernel
-KERNELCURRENT=linux-3.14.5
+KERNELCURRENT=linux-3.16.2
 
 NASINITRAMFS=/root/nas/ns2max/initramfs
 NASINITRAMFSNAME="NS2MAX-Initramfs"
